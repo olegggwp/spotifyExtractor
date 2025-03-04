@@ -15,6 +15,6 @@ client-secret : "16a25e28c0e54552a3781aa3b6a6bf3c"
 Пользователь должен пройти Auth 2.0 аунтефикацию, после этого он сможет соединять плейлисты в Spotify
 
 Тестовый аккаунт Spotify:
-login: 
-password:
+login: alhimicScala@proton.me
+password: alhimicScala2025
 
