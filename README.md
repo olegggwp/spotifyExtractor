@@ -5,16 +5,12 @@
 
 ## Ключи
 Секретные ключи чтобы проект работал : 
-client-id : "9ef65c5fe2404e30a9206e857c7fbf25"
-client-secret : "16a25e28c0e54552a3781aa3b6a6bf3c"
+client-id : "..."
+client-secret : "..."
 прописать их в application.conf
 
 ## Что это?
 Консольное приложение позволяющее соединять плейлисты в Spotify
 При запуске описывается функционал
 Пользователь должен пройти Auth 2.0 аунтефикацию, после этого он сможет соединять плейлисты в Spotify
-
-Тестовый аккаунт Spotify:
-login: alhimicScala@proton.me
-password: alhimicScala2025
 
