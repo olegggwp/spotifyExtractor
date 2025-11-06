@@ -13,11 +13,15 @@ object runApp extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] =
 
-
-    application[IO].attempt
+    application[IO]
+      .attempt
       .flatMap {
-        case Left(th) => IO.println(s"Exit with error:${th.getMessage}").as(ExitCode.Error)
-        case Right(_) => IO.println("Exit 'Ok'").as(ExitCode.Error)
+        case Left(th) =>
+          IO.println(s"Exit with error:${th.getMessage}")
+            .as(ExitCode.Error)
+        case Right(_) =>
+          IO.println("Exit 'Ok'")
+            .as(ExitCode.Success)
       }
       .onCancel(IO.println("Exit 'Cancel'"))
 
@@ -29,7 +33,7 @@ object runApp extends IOApp {
       )
       config <- Resource.eval(ApplicationConfig.usafeLoad())
       backend <- HttpClientCatsBackend.resource[F]()
-      searchClient: SpotifyClient[F] <- Resource.pure(SpotifyClientImpl(config.spotifyClient, backend))
+      searchClient: SpotifyClient[F] <- Resource.pure(SpotifyClientImpl(config.spotifyClientConfig, backend))
       _ <- Resource.make(Console[F].println("Application started"))(_ =>
         Console[F].println("Start closing application")
       )

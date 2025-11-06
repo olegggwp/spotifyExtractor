@@ -18,7 +18,7 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
 
   def loop: F[Unit] =
     Monad[F].iterateWhile {
-      Console[F].println("Привет! Доступные команды:\n" +
+      Console[F].println("Приsвет! Доступные команды:\n" +
         "start : начать процесс авторизации\n" +
         "exit : выйти\n" +
         "Самые интересные вещи начнутся как только Вы авторизируетесь!") *>
@@ -48,32 +48,42 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
     } yield ()
   }
 
-  private def step2cmdcode(code: String): F[Unit] = {
-    client.step2(code).attempt.flatMap {
-      case Left(throwable) => Console[F].println(s"Exception was thrown при попытке получить токен: ${throwable.getMessage}")
-      case Right(response) =>
-        response match {
-          case Left(error) => Console[F].println(s"Сервер выдал ошибку при попытке получить токен: $error")
-          case Right(tokensResponse: client.TokensResponse) =>
-            Console[F].println(s"Ура, вы авторизировались! \n Запрашиваю ваш профиль...")
-              *> printProfile(tokensResponse.access_token)
-              *> Console[F].println("Вы вошли в авторизованный режим.")
-              *> mainLoop(tokensResponse.access_token)
-        }
+  private def step2cmdcode(code: String): F[Unit] =
+    handleApiCall(client.step2(code))("токен") {
+      tokensResponse =>
+        Console[F].println(s"Ура, вы авторизировались! \n Запрашиваю ваш профиль...")
+          *> printProfile(tokensResponse.access_token)
+          *> Console[F].println("Вы вошли в авторизованный режим.")
+          *> mainLoop(tokensResponse.access_token)
     }
-  }
 
-  private def printProfile(token: String): F[Unit] = {
-    client.getUserId(token).attempt.flatMap {
-      case Left(throwable) => Console[F].println(s"Exception was thrown при попытке получить профиль пользователя: ${throwable.getMessage}")
-      case Right(response) =>
-        response match {
-          case Left(error) => Console[F].println(s"Сервер выдал ошибку при попытке получить профиль пользователя: $error")
-          case Right(userId) =>
-            Console[F].println(s"Ваш id : $userId")
-        }
+  private def printProfile(token: String): F[Unit] =
+    handleApiCall(client.getUserId(token))("профиль пользователя") {
+      userId =>
+        Console[F].println(s"Ваш id : $userId")
     }
-  }
+
+
+  private def printPlaylist(token: String, playlist_id: String): F[Unit] =
+    Console[F].println(s"Запрашиваю данные плейлиста...") *>
+      handleApiCall(client.getPlaylistStr(token, playlist_id))("плейлист") {
+        playlistStr =>
+          Console[F].println(s"Ваш плейлист : $playlistStr")
+      }
+
+  private def handleApiCall[A]
+    (apiCall: F[Either[String, A]])
+    (actionName: String)
+    (onSuccess: A => F[Unit])
+    : F[Unit] =
+    apiCall.attempt.flatMap {
+      case Left(th) =>
+        Console[F].println(s"Ошибка при попытке получить $actionName: ${th.getMessage}")
+      case Right(Left(error)) =>
+        Console[F].println(s"Серверная ошибка при попытки получить $actionName: $error")
+      case Right(Right(result)) =>
+        onSuccess(result)
+    }
 
   private def mainLoop(token: String): F[Unit] = Monad[F].iterateWhile {
     Console[F].println("\nДоступные комманды:\n" +
@@ -97,18 +107,6 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
     case _ => true
   }.void
 
-  private def printPlaylist(token: String, playlist_id: String): F[Unit] = {
-    Console[F].println(s"Запрашиваю данные плейлиста...") *>
-      client.getPlaylistStr(token, playlist_id).attempt.flatMap {
-        case Left(throwable) => Console[F].println(s"Exception was thrown при попытке получить плейлист: ${throwable.getMessage}")
-        case Right(response) =>
-          response match {
-            case Left(error) => Console[F].println(s"Сервер выдал ошибку при попытке получить плейлист: $error")
-            case Right(playlistStr) =>
-              Console[F].println(s"Ваш плейлист : $playlistStr")
-          }
-      }
-  }
 
   private def unionPlaylists(token: String, playlist1_id: String, playlist2_id: String): F[Unit] = {
     Console[F].println(s"Соединяю плейлисты...") *>

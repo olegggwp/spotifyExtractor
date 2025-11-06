@@ -9,7 +9,7 @@ import pureconfig.{ConfigReader, ConfigSource}
 
 
 case class ApplicationConfig (
-                               spotifyClient : SpotifyClientConfig
+                               spotifyClientConfig : SpotifyClientConfig
                              )
 
 object ApplicationConfig {
