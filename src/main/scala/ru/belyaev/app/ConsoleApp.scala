@@ -71,6 +71,12 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
           Console[F].println(s"Ваш плейлист : $playlistStr")
       }
 
+  private def unionPlaylists(token: String, playlist1_id: String, playlist2_id: String): F[Unit] =
+    Console[F].println(s"Соединяю плейлисты...") *>
+      handleApiCall(client.unionPlaylists(token, playlist1_id, playlist2_id))("соединить плейлисты") {
+        str => Console[F].println(s"Получилось! Вот что сервер сказал напоследок : $str")
+      }
+
 
   private def mainLoop(token: String): F[Unit] = Monad[F].iterateWhile {
     Console[F].println("\nДоступные комманды:\n" +
@@ -95,13 +101,6 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
   }.void
 
 
-  private def unionPlaylists(token: String, playlist1_id: String, playlist2_id: String): F[Unit] = {
-    val call: F[Either[String, String]] = client.unionPlaylists(token, playlist1_id, playlist2_id)
-    Console[F].println(s"Соединяю плейлисты...") *>
-    handleApiCall(client.unionPlaylists(token, playlist1_id, playlist2_id))("соединить плейлисты"){
-      str => Console[F].println(s"Получилось! Вот что сервер сказал напоследок : $str")
-    }
-  }
 
 
   private def handleApiCall[A]
