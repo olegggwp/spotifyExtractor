@@ -38,13 +38,11 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
     for {
       _ <- Console[F].println(s"Перейди сюда: $url")
       _ <- Console[F].println("и когда тебя перекинет на страницу, впиши сюда то, что находится в строке браузера:")
-      url <- Console[F].readLine
-      _ <- client.step2parse(url) match {
-        case Left(error) => Console[F].println(s"ошибка : $error")
-        case Right(code) =>
-          //          Console[F].println(s"code : $code") *>
-          step2cmdcode(code)
-      }
+      newUrl <- Console[F].readLine
+      _ <- client.step2parse(newUrl).fold(
+        error => Console[F].println(s"Ошибка: $error"),
+        code => step2cmdcode(code)
+      )
     } yield ()
   }
 
@@ -101,18 +99,16 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
   }.void
 
 
-
-
   private def handleApiCall[A]
   (apiCall: F[Either[String, A]])
   (actionName: String)
   (onSuccess: A => F[Unit])
   : F[Unit] =
     apiCall.attempt.flatMap {
-      case Left(th) =>
-        Console[F].println(s"Ошибка при попытке $actionName: ${th.getMessage}")
-      case Right(Left(error)) =>
-        Console[F].println(s"Серверная ошибка при попытке $actionName: $error")
+      case Left(methodError) =>
+        Console[F].println(s"Ошибка при попытке $actionName: ${methodError.getMessage}")
+      case Right(Left(serverError)) =>
+        Console[F].println(s"Серверная ошибка при попытке $actionName: $serverError")
       case Right(Right(result)) =>
         onSuccess(result)
     }

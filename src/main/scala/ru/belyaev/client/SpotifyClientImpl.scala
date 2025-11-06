@@ -1,6 +1,6 @@
 package ru.belyaev.client
 
-import cats.{Monad}
+import cats.Monad
 import cats.data.EitherT
 import cats.syntax.functor.*
 import ru.belyaev.config.SpotifyClientConfig
@@ -41,7 +41,7 @@ private class SpotifyClientImpl[F[_] : Monad](
     val mainURL = "https://accounts.spotify.com/authorize"
     val redirect_uri = config.redirectURL
     val scope = "user-read-private user-read-email playlist-modify-public playlist-modify-private"
-    val resStr = uri"${mainURL}"
+    val resStr = uri"$mainURL"
       .addParam("response_type", "code")
       .addParam("client_id", config.clientId)
       .addParam("scope", scope)
@@ -61,7 +61,7 @@ private class SpotifyClientImpl[F[_] : Monad](
         .getBytes(StandardCharsets.UTF_8))
     val txt = basicRequest
       .headers(Map("content-type" -> "application/x-www-form-urlencoded", "Authorization" -> authorization))
-      .post(uri"${sp}"
+      .post(uri"$sp"
         .addParam("grant_type", grant_type)
         .addParam("redirect_uri", redirect_uri)
         .addParam("code", code)
@@ -89,9 +89,7 @@ private class SpotifyClientImpl[F[_] : Monad](
       case _ => Left("URL не соответствует ожидаемому формату")
     }
   }
-
-
-
+  
 
   override def getUserId(token: String): F[Either[String, String]] = {
     basicRequest
@@ -106,8 +104,6 @@ private class SpotifyClientImpl[F[_] : Monad](
         )
       )
   }
-
-  
 
 
   private def getPlaylist(token: String, playlist_id: String): F[Either[String, Playlist]] = {
@@ -149,7 +145,7 @@ private class SpotifyClientImpl[F[_] : Monad](
   def addSongs(token : String, playlist_id : String, toAdd: List[String]): F[Either[String, String]] = {
     basicRequest
       .headers(Map("Authorization" -> ("Bearer " + token)))
-      .post(uri"https://api.spotify.com/v1/playlists/${playlist_id}/tracks"
+      .post(uri"https://api.spotify.com/v1/playlists/$playlist_id/tracks"
         .addParam("position", "0")
         .addParam("uris", toAdd.map("spotify:track:" + _).mkString(","))
       )
