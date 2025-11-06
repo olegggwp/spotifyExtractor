@@ -49,7 +49,7 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
   }
 
   private def step2cmdcode(code: String): F[Unit] =
-    handleApiCall(client.step2(code))("токен") {
+    handleApiCall(client.step2(code))("получить токен") {
       tokensResponse =>
         Console[F].println(s"Ура, вы авторизировались! \n Запрашиваю ваш профиль...")
           *> printProfile(tokensResponse.access_token)
@@ -58,7 +58,7 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
     }
 
   private def printProfile(token: String): F[Unit] =
-    handleApiCall(client.getUserId(token))("профиль пользователя") {
+    handleApiCall(client.getUserId(token))("получить профиль пользователя") {
       userId =>
         Console[F].println(s"Ваш id : $userId")
     }
@@ -66,24 +66,11 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
 
   private def printPlaylist(token: String, playlist_id: String): F[Unit] =
     Console[F].println(s"Запрашиваю данные плейлиста...") *>
-      handleApiCall(client.getPlaylistStr(token, playlist_id))("плейлист") {
+      handleApiCall(client.getPlaylistStr(token, playlist_id))("получить плейлист") {
         playlistStr =>
           Console[F].println(s"Ваш плейлист : $playlistStr")
       }
 
-  private def handleApiCall[A]
-    (apiCall: F[Either[String, A]])
-    (actionName: String)
-    (onSuccess: A => F[Unit])
-    : F[Unit] =
-    apiCall.attempt.flatMap {
-      case Left(th) =>
-        Console[F].println(s"Ошибка при попытке получить $actionName: ${th.getMessage}")
-      case Right(Left(error)) =>
-        Console[F].println(s"Серверная ошибка при попытки получить $actionName: $error")
-      case Right(Right(result)) =>
-        onSuccess(result)
-    }
 
   private def mainLoop(token: String): F[Unit] = Monad[F].iterateWhile {
     Console[F].println("\nДоступные комманды:\n" +
@@ -109,17 +96,28 @@ private class ConsoleApp[F[_] : MonadThrow : Console](
 
 
   private def unionPlaylists(token: String, playlist1_id: String, playlist2_id: String): F[Unit] = {
+    val call: F[Either[String, String]] = client.unionPlaylists(token, playlist1_id, playlist2_id)
     Console[F].println(s"Соединяю плейлисты...") *>
-      client.unionPlaylists(token, playlist1_id, playlist2_id).attempt.flatMap {
-        case Left(throwable) => Console[F].println(s"Exception was thrown при попытке соединить плейлисты: ${throwable.getMessage}")
-        case Right(response) =>
-          response match {
-            case Left(error) => Console[F].println(s"Сервер выдал ошибку при попытке соединить плейлисты: $error")
-            case Right(str) =>
-              Console[F].println(s"Получилось! Вот что сервер сказал напоследок : $str")
-          }
-      }
+    handleApiCall(client.unionPlaylists(token, playlist1_id, playlist2_id))("соединить плейлисты"){
+      str => Console[F].println(s"Получилось! Вот что сервер сказал напоследок : $str")
+    }
   }
+
+
+  private def handleApiCall[A]
+  (apiCall: F[Either[String, A]])
+  (actionName: String)
+  (onSuccess: A => F[Unit])
+  : F[Unit] =
+    apiCall.attempt.flatMap {
+      case Left(th) =>
+        Console[F].println(s"Ошибка при попытке $actionName: ${th.getMessage}")
+      case Right(Left(error)) =>
+        Console[F].println(s"Серверная ошибка при попытке $actionName: $error")
+      case Right(Right(result)) =>
+        onSuccess(result)
+    }
+
 
 }
 
